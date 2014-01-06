@@ -170,6 +170,9 @@ public final class MapViewer {
     // Tiles that will be drawn at the left (can be less than 0)
     private int leftColumnX;
 
+    //Whether the map is currently aligned with the edge
+    private boolean alignedTop = false, alignedBottom = false, alignedLeft = false, alignedRight = false;
+
     // The height offset to paint a Unit at (in pixels).
     private static final int UNIT_OFFSET = 20,
         STATE_OFFSET_X = 25,
@@ -1093,10 +1096,11 @@ public final class MapViewer {
         if (tileToCheck == null)
             return false;
         repositionMapIfNeeded();
-        return tileToCheck.getY() - 2 > topRow
-            && tileToCheck.getY() + 4 < bottomRow
-            && tileToCheck.getX() - 1 > leftColumn
-            && tileToCheck.getX() + 2 < rightColumn;
+        Game gameData = freeColClient.getGame();
+        return (tileToCheck.getY() - 2 > topRow || alignedTop)
+            && (tileToCheck.getY() + 4 < bottomRow || alignedBottom)
+            && (tileToCheck.getX() - 1 > leftColumn || alignedLeft)
+            && (tileToCheck.getX() + 2 < rightColumn || alignedRight);
     }
 
 
@@ -2993,7 +2997,10 @@ public final class MapViewer {
         drawn.
         */
 
+	alignedTop = false;
+	alignedBottom = false;
         if (y < topRows) {
+	    alignedTop = true;
             // We are at the top of the map
             bottomRow = (size.height / (halfHeight)) - 1;
             if ((size.height % (halfHeight)) != 0) {
@@ -3003,6 +3010,7 @@ public final class MapViewer {
             bottomRowY = bottomRow * (halfHeight);
             topRowY = 0;
         } else if (y >= (gameData.getMap().getHeight() - bottomRows)) {
+	    alignedBottom = true;
             // We are at the bottom of the map
             bottomRow = gameData.getMap().getHeight() - 1;
 
@@ -3016,7 +3024,7 @@ public final class MapViewer {
             topRowY = bottomRowY - (bottomRow - topRow) * (halfHeight);
         } else {
             // We are not at the top of the map and not at the bottom
-            bottomRow = y + bottomRows;
+            bottomRow = y + bottomRows - 1;
             topRow = y - topRows;
             bottomRowY = topSpace + (halfHeight) * bottomRows;
             topRowY = topSpace - topRows * (halfHeight);
@@ -3033,6 +3041,8 @@ public final class MapViewer {
         halfWidth more to the right).
         */
 
+	alignedLeft = false;
+	alignedRight = false;
         if (x < leftColumns) {
             // We are at the left side of the map
             leftColumn = 0;
@@ -3043,6 +3053,7 @@ public final class MapViewer {
             }
 
             leftColumnX = 0;
+	    alignedLeft = true;
         } else if (x >= (gameData.getMap().getWidth() - rightColumns)) {
             // We are at the right side of the map
             rightColumn = gameData.getMap().getWidth() - 1;
@@ -3055,6 +3066,7 @@ public final class MapViewer {
             leftColumnX = size.width - tileWidth - halfWidth -
                 leftColumn * tileWidth;
             leftColumn = rightColumn - leftColumn;
+	    alignedRight = true;
         } else {
             // We are not at the left side of the map and not at the right side
             leftColumn = x - leftColumns;
